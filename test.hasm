@@ -1,0 +1,11 @@
+VAR.1 DC INTEGER(17)
+VAR.2 DC 10*INTEGER(12)
+STO.3 DS INTEGER
+STO.4 DS 20*INTEGER
+
+START   AR 8, 9
+        L 0,VAR.1
+        L 1,VAR.2
+        AR 0, 1
+        CR 0, 1
+LABEL   JP START
