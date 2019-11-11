@@ -10,7 +10,7 @@ uint16_t sym_table_get(const struct sym_table* sym_table, const char* name)
         return UINT16_MAX;
 
     const struct sym_table* current = sym_table;
-    while(current->next != NULL)
+    while(current != NULL)
     {
         if(strcmp(current->name, name) == 0)
             return current->addr;
