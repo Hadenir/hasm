@@ -294,7 +294,7 @@ bool handle_CR(struct virtual_machine* vm, uint32_t args)
 bool handle_J(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
-    uint16_t addr = args >> 8;
+    uint16_t addr = (args >> 8) + vm->regs[addr_reg];
 
     printf("-> J(vm->pc = 0x%08x)\n", addr);
 
@@ -309,7 +309,7 @@ bool handle_J(struct virtual_machine* vm, uint32_t args)
 bool handle_JP(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
-    uint16_t addr = args >> 8;
+    uint16_t addr = (args >> 8) + vm->regs[addr_reg];
 
     printf("-> JP(vm->pc = 0x%08x)\n", addr);
 
@@ -325,7 +325,7 @@ bool handle_JP(struct virtual_machine* vm, uint32_t args)
 bool handle_JN(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
-    uint16_t addr = args >> 8;
+    uint16_t addr = (args >> 8) + vm->regs[addr_reg];
 
     printf("-> JN(vm->pc = 0x%08x)\n", addr);
 
@@ -341,7 +341,7 @@ bool handle_JN(struct virtual_machine* vm, uint32_t args)
 bool handle_JZ(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
-    uint16_t addr = args >> 8;
+    uint16_t addr = (args >> 8) + vm->regs[addr_reg];
 
     printf("-> JZ(vm->pc = 0x%08x)\n", addr);
 
