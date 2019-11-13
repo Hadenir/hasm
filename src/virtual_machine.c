@@ -4,20 +4,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int vm_init(struct prog_ptr prog_ptr)
+int vm_init(struct prog_ptr prog_ptr, struct virtual_machine* vm)
 {
-    mem_sz = prog_ptr.mem_sz;
-    memory = prog_ptr.mem_ptr;
-    pc = prog_ptr.entry_addr;
+    vm->mem_sz = prog_ptr.mem_sz;
+    vm->memory = prog_ptr.mem_ptr;
+    vm->pc = prog_ptr.entry_addr;
 
-    if(memory == NULL || mem_sz == 0)   // Memory cannot point to null nor be size of zero.
+    if(vm->memory == NULL || vm->mem_sz == 0)   // vm->memory cannot point to null nor be size of zero.
         return 1;
 
-    if(pc >= mem_sz)    // Entry point must be inside
+    if(vm->pc >= vm->mem_sz)    // Entry point must be inside
         return 2;
 
-    flags = 0;
-    regs = calloc(16, 4);  // Allocate memory for an array of 16 32-bit registers.
+    vm->flags = 0;
+    vm->regs = calloc(16, 4);  // Allocate vm->memory for an array of 16 32-bit registers.
 
     handlers[0x00] = handle_NOP;
     handlers[0x02] = handle_A;
@@ -42,360 +42,371 @@ int vm_init(struct prog_ptr prog_ptr)
     return 0;
 }
 
-int vm_run()
+int vm_run(struct virtual_machine* vm)
 {
-    uint8_t opcode = 0;
-    uint32_t args = 0;
-    bool reg_inst = false;
-
-    for(;;)
+    int result = 0;
+    while(vm->pc < vm->mem_sz)  // Execute until there are no more instructions to perform.
     {
-        opcode = *(uint8_t*) (memory + pc);
-        reg_inst = (opcode & 1) != 0; // Even instructions work with memory, odd ones with 2 registers.
-
-        if(opcode >= 0x0c && opcode <= 0x0f)
-            reg_inst = false;   // Jump instructions are always 4-bytes long.
-
-        if(reg_inst)
-            args = *(memory + pc + 1);
-        else
-            args = *(uint32_t*) (memory + pc) >> 8;
-
-        pc += reg_inst ? 2 : 4; /* Next instruction is 2 bytes further if current instruction is register-register,
-                                   otherwise we need to skip 4 bytes (register-memory instruction). */
-        if(pc > mem_sz)
-            break;
-
-        if(!handlers[opcode](args))
-            return 1;
+        result = vm_step(vm);
+        if(result != 0)
+            return result;
     }
 
     return 0;
 }
 
-void vm_finalize()
+int vm_step(struct virtual_machine* vm)
 {
-    free(regs);
-    free(memory);
+    if(vm->pc >= vm->mem_sz)
+        return 1;
+
+    uint8_t opcode = 0;
+    uint32_t args = 0;
+    bool reg_inst = false;
+
+    opcode = *(uint8_t*) (vm->memory + vm->pc);
+    reg_inst = (opcode & 1) != 0; // Even instructions work with vm->memory, odd ones with 2 registers.
+
+    if(opcode >= 0x0c && opcode <= 0x0f)
+        reg_inst = false;   // Jump instructions are always 4-bytes long.
+
+    if(reg_inst)
+        args = *(vm->memory + vm->pc + 1);
+    else
+        args = *(uint32_t*) (vm->memory + vm->pc) >> 8;
+
+    vm->pc += reg_inst ? 2 : 4; /* Next instruction is 2 bytes further if current instruction is register-register,
+                                otherwise we need to skip 4 bytes (register-vm->memory instruction). */
+
+    if(!handlers[opcode](vm, args))
+        return 2;
+
+    return 0;
 }
 
-void vm_update_flags(int32_t value)
+void vm_finalize(struct virtual_machine* vm)
+{
+    free(vm->regs);
+    free(vm->memory);
+}
+
+void vm_update_flags(struct virtual_machine* vm, int32_t value)
 {
     if(value == 0)
-        flags = 0;
+        vm->flags = 0;
     else if(value > 0)
-        flags = 1;
+        vm->flags = 1;
     else
-        flags = 2;
+        vm->flags = 2;
 }
 
-bool handle_NOP(uint32_t args)
+bool handle_NOP(struct virtual_machine* vm, uint32_t args)
 {
     printf("-> ___\n");
 
     return true;
 }
 
-bool handle_A(uint32_t args)
+bool handle_A(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u += [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
+    printf("-> (%d) r%u += [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
+    int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
 
     printf("(%d)\n", value);
 
-    regs[reg] += value;
-    vm_update_flags(regs[reg]);
+    vm->regs[reg] += value;
+    vm_update_flags(vm, vm->regs[reg]);
 
     return true;
 }
 
-bool handle_AR(uint32_t args)
+bool handle_AR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    printf("-> (%d) r%u += r%u (%d)\n", regs[regA], regA, regB, regs[regB]);
+    printf("-> (%d) r%u += r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
-    regs[regA] += regs[regB];
-    vm_update_flags(regs[regA]);
+    vm->regs[regA] += vm->regs[regB];
+    vm_update_flags(vm, vm->regs[regA]);
 
     return true;
 }
 
-bool handle_S(uint32_t args)
+bool handle_S(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u -= [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
+    printf("-> (%d) r%u -= [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
+    int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
 
     printf("(%d)\n", value);
 
-    regs[reg] -= value;
-    vm_update_flags(regs[reg]);
+    vm->regs[reg] -= value;
+    vm_update_flags(vm, vm->regs[reg]);
 
     return true;
 }
 
-bool handle_SR(uint32_t args)
+bool handle_SR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    printf("-> (%d) r%u -= r%u (%d)\n", regs[regA], regA, regB, regs[regB]);
+    printf("-> (%d) r%u -= r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
-    regs[regA] -= regs[regB];
-    vm_update_flags(regs[regA]);
+    vm->regs[regA] -= vm->regs[regB];
+    vm_update_flags(vm, vm->regs[regA]);
 
     return true;
 }
 
-bool handle_M(uint32_t args)
+bool handle_M(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u *= [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
+    printf("-> (%d) r%u *= [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
+    int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
 
     printf("(%d)\n", value);
 
-    regs[reg] *= value;
-    vm_update_flags(regs[reg]);
+    vm->regs[reg] *= value;
+    vm_update_flags(vm, vm->regs[reg]);
 
     return true;
 }
 
-bool handle_MR(uint32_t args)
+bool handle_MR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    printf("-> (%d) r%u *= r%u (%d)\n", regs[regA], regA, regB, regs[regB]);
+    printf("-> (%d) r%u *= r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
-    regs[regA] *= regs[regB];
-    vm_update_flags(regs[regA]);
+    vm->regs[regA] *= vm->regs[regB];
+    vm_update_flags(vm, vm->regs[regA]);
 
     return true;
 }
 
-bool handle_D(uint32_t args)
+bool handle_D(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u /= [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
+    printf("-> (%d) r%u /= [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
+    int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
 
     if(value == 0)  // Division by zero is an invalid operation.
     {
-        flags = 3;
+        vm->flags = 3;
         return true;
     }
 
     printf("(%d)\n", value);
 
-    regs[reg] /= value;
-    vm_update_flags(regs[reg]);
+    vm->regs[reg] /= value;
+    vm_update_flags(vm, vm->regs[reg]);
 
     return true;
 }
 
-bool handle_DR(uint32_t args)
+bool handle_DR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    printf("-> (%d) r%u /= r%u (%d)\n", regs[regA], regA, regB, regs[regB]);
+    printf("-> (%d) r%u /= r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
-    int32_t value = regs[regB];
+    int32_t value = vm->regs[regB];
 
     if(value == 0)
     {
-        flags = 3;
+        vm->flags = 3;
         return true;
     }
 
-    regs[regA] /= value;
-    vm_update_flags(regs[regA]);
+    vm->regs[regA] /= value;
+    vm_update_flags(vm, vm->regs[regA]);
 
     return true;
 }
 
-bool handle_C(uint32_t args)
+bool handle_C(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u <=> [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
+    printf("-> (%d) r%u <=> [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
+    int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
 
     printf("(%d)\n", value);
 
-    int32_t result = regs[reg] - value;
-    vm_update_flags(result);
+    int32_t result = vm->regs[reg] - value;
+    vm_update_flags(vm, result);
 
     return true;
 }
 
-bool handle_CR(uint32_t args)
+bool handle_CR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    printf("-> (%d) r%u <=> r%u (%d)\n", regs[regA], regA, regB, regs[regB]);
+    printf("-> (%d) r%u <=> r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
-    int32_t result = regs[regA] - regs[regB];
-    vm_update_flags(result);
+    int32_t result = vm->regs[regA] - vm->regs[regB];
+    vm_update_flags(vm, result);
 
     return true;
 }
 
-bool handle_J(uint32_t args)
+bool handle_J(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> J(pc = 0x%08x)\n", addr);
+    printf("-> J(vm->pc = 0x%08x)\n", addr);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    pc = addr;
+    vm->pc = addr;
 
     return true;
 }
 
-bool handle_JP(uint32_t args)
+bool handle_JP(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> JP(pc = 0x%08x)\n", addr);
+    printf("-> JP(vm->pc = 0x%08x)\n", addr);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    if(flags == 1)
-        pc = addr;
+    if(vm->flags == 1)
+        vm->pc = addr;
 
     return true;
 }
 
-bool handle_JN(uint32_t args)
+bool handle_JN(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> JN(pc = 0x%08x)\n", addr);
+    printf("-> JN(vm->pc = 0x%08x)\n", addr);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    if(flags == 2)
-        pc = addr;
+    if(vm->flags == 2)
+        vm->pc = addr;
 
     return true;
 }
 
-bool handle_JZ(uint32_t args)
+bool handle_JZ(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> JZ(pc = 0x%08x)\n", addr);
+    printf("-> JZ(vm->pc = 0x%08x)\n", addr);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    if(flags == 0)
-        pc = addr;
+    if(vm->flags == 0)
+        vm->pc = addr;
 
     return true;
 }
 
-bool handle_L(uint32_t args)
+bool handle_L(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> r%u := [0x%08x] ", reg, addr + regs[addr_reg]);
+    printf("-> r%u := [0x%08x] ", reg, addr + vm->regs[addr_reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
+    int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
 
     printf("(%d)\n", value);
 
-    regs[reg] = value;
+    vm->regs[reg] = value;
     return true;
 }
 
-bool handle_LR(uint32_t args)
+bool handle_LR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    printf("-> r%u := r%u (%d)\n", regA, regB, regs[regB]);
+    printf("-> r%u := r%u (%d)\n", regA, regB, vm->regs[regB]);
 
-    regs[regA] = regs[regB];
+    vm->regs[regA] = vm->regs[regB];
     return true;
 }
 
-bool handle_ST(uint32_t args)
+bool handle_ST(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> [0x%08x] := r%u (%d)\n", addr + regs[addr_reg], reg, regs[reg]);
+    printf("-> [0x%08x] := r%u (%d)\n", addr + vm->regs[addr_reg], reg, vm->regs[reg]);
 
-    if(addr >= mem_sz)
+    if(addr >= vm->mem_sz)
         return false;
 
-    *(int32_t*) (memory + addr + regs[addr_reg]) = regs[reg];
+    *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]) = vm->regs[reg];
     return true;
 }
 
-bool handle_LA(uint32_t args)
+bool handle_LA(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> r%u := 0x%08x\n", reg, addr + regs[addr_reg]);
+    printf("-> r%u := 0x%08x\n", reg, addr + vm->regs[addr_reg]);
 
-    regs[reg] = addr + regs[addr_reg];
+    vm->regs[reg] = addr + vm->regs[addr_reg];
     return true;
 }

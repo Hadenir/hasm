@@ -11,7 +11,9 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Wrong number of arguments. Use: hasm <file.hasm>\n");
         return -1;
     }
+
     int result;
+
     struct prog_ptr prog_ptr;
     const char* filename = argv[1];
 
@@ -23,10 +25,10 @@ int main(int argc, char* argv[])
         return result;
     }
 
-    printf("mem_ptr: 0x%x, mem_sz: 0x%x, entry_addr: 0x%x\n", (uint32_t)prog_ptr.mem_ptr, prog_ptr.mem_sz, prog_ptr.entry_addr);
+    struct virtual_machine vm;
 
     printf("Initializing virtual machine...\n");
-    result = vm_init(prog_ptr);
+    result = vm_init(prog_ptr, &vm);
     if(result != 0)
     {
         fprintf(stderr, "Error while initializing virtual machine! Error code: %d\n", result);
@@ -34,7 +36,7 @@ int main(int argc, char* argv[])
     }
 
     printf("Executing %s...\n", filename);
-    result = vm_run();
+    result = vm_run(&vm);
     if(result != 0)
     {
         fprintf(stderr, "Error while running %s! Error code: %d\n", filename, result);
@@ -42,7 +44,8 @@ int main(int argc, char* argv[])
     }
 
     printf("Program exited. Virtual machine shutting down...\n");
-    vm_finalize();
+    vm_finalize(&vm);
+
     printf("Goodbye.");
     return 0;
 }
