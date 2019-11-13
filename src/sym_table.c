@@ -28,7 +28,7 @@ void sym_table_push_back(struct sym_table** sym_table, const char* name, uint16_
 
     if(*sym_table == NULL)  // Create new symbol table.
     {
-        *sym_table = malloc(sizeof(sym_table));
+        *sym_table = malloc(sizeof(struct sym_table));
         (*sym_table)->addr = addr;
         (*sym_table)->next = NULL;
         size_t name_sz = strlen(name) + 1;
@@ -44,7 +44,7 @@ void sym_table_push_back(struct sym_table** sym_table, const char* name, uint16_
     while(current->next != NULL)
         current = current->next;
 
-    struct sym_table* new = malloc(sizeof(sym_table));
+    struct sym_table* new = malloc(sizeof(struct sym_table));
     new->addr = addr;
     new->next = NULL;
     size_t name_sz = strlen(name) + 1;
