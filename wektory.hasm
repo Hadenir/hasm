@@ -4,9 +4,78 @@ WEKTORC DS 200*INTEGER
 JEDEN   DC INTEGER(1)
 CZTERY  DC INTEGER(4)
 STO     DC INTEGER(100)
+2STO    DC INTEGER(200)
+PCDZ    DC INTEGER(50)
 ZERO    DC INTEGER
 
 # Wczytywanie wektorow
-        
+            L 1, ZERO
+            L 2, PCDZ
+            LA 3, WEKTORA
+            LA 4, WEKTORB
+PETLA_WCZYT C 1, STO
+            JZ KONIEC_WCZYT
+            ST 1, 0(3)
+            ST 2, 0(4)
+            A 1, JEDEN
+            A 3, CZTERY
+            A 4, CZTERY
+            J PETLA_WCZYT
+KONIEC_WCZYT    NOP
 
 # Algorytm
+            LA 1, WEKTORA
+            LA 2, WEKTORB
+            L 3, 0(1)
+            L 4, 0(2)
+            L 5, ZERO
+            L 6, ZERO
+            LA 7, WEKTORC
+POROWNAJ    CR 3, 4
+            JP MNIEJ.W.B
+            J MNIEJ.W.A
+MNIEJ.W.A   ST 3, 0(7)
+            A 7, CZTERY
+            A 1, CZTERY
+            L 3, 0(1)
+            A 5, JEDEN
+            C 5, STO
+            JN POROWNAJ
+            J KONIECA
+MNIEJ.W.B   ST 4, 0(7)
+            A 7, CZTERY
+            A 2, CZTERY
+            L 4, 0(2)
+            A 6, JEDEN
+            C 6, STO
+            JN POROWNAJ
+            J KONIECB
+KONIECA     C 6, STO
+            JZ KONIEC
+            ST 4, 0(7)
+            A 7, CZTERY
+            A 2, CZTERY
+            L 4, 0(2)
+            A 6, JEDEN
+            J KONIECA
+KONIECB     C 5, STO
+            JZ KONIEC
+            ST 3, 0(7)
+            A 7, CZTERY
+            A 1, CZTERY
+            L 3, 0(1)
+            A 5, JEDEN
+            J KONIECB
+KONIEC      NOP
+
+# Wyswietlenie wyniku
+            L 1, ZERO
+            LA 3, WEKTORC
+            L 4, ZERO
+PETLA_WYSW  C 1, 2STO
+            JZ KONIEC_WYSW
+            L 4, 0(3)
+            A 1, JEDEN
+            A 3, CZTERY
+            J PETLA_WYSW
+KONIEC_WYSW NOP

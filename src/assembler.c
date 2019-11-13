@@ -13,7 +13,7 @@
 #define MAX_LINE_LENGTH 256
 
 const struct instruction instructions[NUM_INSTRUCTIONS] = {
-    {"NOP", 0x00, 2, &assemble_nop},        // Perform no operation.
+    {"NOP", 0x00, 4, &assemble_nop},        // Perform no operation.
     {"A",  0x02, 4, &assemble_mem_and_reg}, // Add value in memory to value in a register.
     {"AR", 0x03, 2, &assemble_reg_and_reg}, // Add value in a register to value in another one.
     {"S",  0x04, 4, &assemble_mem_and_reg}, // Substract value in memory from value in a register.
@@ -278,17 +278,26 @@ uint32_t assemble_mem_and_reg(const struct instruction* self, const char* args, 
 {
     uint32_t bytecode = 0;
 
-    uint16_t dest_reg;
+    uint16_t dest_reg, addr_reg, addr;
     char* label = calloc(MAX_TOKEN_LENGTH, 1);
-    if(sscanf(args, "%hu , %s", &dest_reg, label) != 2)
-        return UINT32_MAX;
-
-    uint16_t addr = sym_table_get(sym_table, label);
-    if(addr == UINT16_MAX)
-        return UINT32_MAX;
+    if(sscanf(args, "%hu , %hu ( %hu )", &dest_reg, &addr, &addr_reg) != 3)
+    {
+        if(sscanf(args, "%hu , %s", &dest_reg, label) == 2)
+        {
+            addr = sym_table_get(sym_table, label);
+            if(addr == UINT16_MAX)
+                return UINT32_MAX;
+            addr_reg = 14;  // r14 is default address register.
+        }
+        else
+        {
+            return UINT32_MAX;
+        }
+    }
 
     bytecode |= self->opcode;
     bytecode |= dest_reg << 8;
+    bytecode |= addr_reg << 12;
     bytecode |= addr << 16;
 
     free(label);
@@ -299,15 +308,25 @@ uint32_t assemble_jump(const struct instruction* self, const char* args, const s
 {
     uint32_t bytecode = 0;
 
+    uint16_t addr_reg, addr;
     char* label = malloc(MAX_TOKEN_LENGTH);
-    if(sscanf(args, "%s", label) == 0)
-        return UINT32_MAX;
-
-    uint16_t addr = sym_table_get(sym_table, label);
-    if(addr == UINT16_MAX)
-        return UINT32_MAX;
+    if(sscanf(args, "%hu ( %hu )", &addr, &addr_reg) != 2)
+    {
+        if(sscanf(args, "%s" , label) == 1)
+        {
+            addr = sym_table_get(sym_table, label);
+            if(addr == UINT16_MAX)
+                return UINT32_MAX;
+            addr_reg = 14;  // r14 is default address register.
+        }
+        else
+        {
+            return UINT32_MAX;
+        }
+    }
 
     bytecode |= self->opcode;
+    bytecode |= addr_reg << 12;
     bytecode |= addr << 16;
 
     free(label);

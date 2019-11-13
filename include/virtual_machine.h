@@ -5,7 +5,7 @@
 
 #include "prog_ptr.h"
 
-#define NUM_HANDLERS 19
+#define NUM_HANDLERS 32
 
 uint32_t pc;        // Address of next instruction to be executed.
 int32_t flags;     // State flags register.

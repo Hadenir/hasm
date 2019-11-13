@@ -6,6 +6,8 @@ STO.4 DS 20*INTEGER
 START   AR 8, 9
         L 0, VAR.1
         L 1, VAR.2
+        LA 2, VAR.2
+        L 3, 0(2)
         AR 0, 1
         CR 0, 1
 LABEL   JP START

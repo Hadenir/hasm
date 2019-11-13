@@ -4,11 +4,16 @@
 #include "assembler.h"
 #include "virtual_machine.h"
 
-int main()
+int main(int argc, char* argv[])
 {
+    if(argc != 2)
+    {
+        fprintf(stderr, "Wrong number of arguments. Use: hasm <file.hasm>\n");
+        return -1;
+    }
     int result;
     struct prog_ptr prog_ptr;
-    const char* filename = "test.hasm";
+    const char* filename = argv[1];
 
     printf("Assembling %s...\n", filename);
     result = hasm_assemble(filename, &prog_ptr);

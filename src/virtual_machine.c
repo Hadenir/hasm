@@ -99,14 +99,15 @@ bool handle_NOP(uint32_t args)
 bool handle_A(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u += [0x%08x] ", regs[reg], reg, addr);
+    printf("-> (%d) r%u += [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr);
+    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
 
     printf("(%d)\n", value);
 
@@ -132,14 +133,15 @@ bool handle_AR(uint32_t args)
 bool handle_S(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u -= [0x%08x] ", regs[reg], reg, addr);
+    printf("-> (%d) r%u -= [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr);
+    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
 
     printf("(%d)\n", value);
 
@@ -165,14 +167,15 @@ bool handle_SR(uint32_t args)
 bool handle_M(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u *= [0x%08x] ", regs[reg], reg, addr);
+    printf("-> (%d) r%u *= [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr);
+    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
 
     printf("(%d)\n", value);
 
@@ -198,14 +201,15 @@ bool handle_MR(uint32_t args)
 bool handle_D(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u /= [0x%08x] ", regs[reg], reg, addr);
+    printf("-> (%d) r%u /= [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr);
+    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
 
     if(value == 0)  // Division by zero is an invalid operation.
     {
@@ -245,14 +249,15 @@ bool handle_DR(uint32_t args)
 bool handle_C(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> (%d) r%u <=> [0x%08x] ", regs[reg], reg, addr);
+    printf("-> (%d) r%u <=> [0x%08x] ", regs[reg], reg, addr + regs[addr_reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr);
+    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
 
     printf("(%d)\n", value);
 
@@ -277,6 +282,7 @@ bool handle_CR(uint32_t args)
 
 bool handle_J(uint32_t args)
 {
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
     printf("-> J(pc = 0x%08x)\n", addr);
@@ -291,6 +297,7 @@ bool handle_J(uint32_t args)
 
 bool handle_JP(uint32_t args)
 {
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
     printf("-> JP(pc = 0x%08x)\n", addr);
@@ -306,6 +313,7 @@ bool handle_JP(uint32_t args)
 
 bool handle_JN(uint32_t args)
 {
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
     printf("-> JN(pc = 0x%08x)\n", addr);
@@ -321,6 +329,7 @@ bool handle_JN(uint32_t args)
 
 bool handle_JZ(uint32_t args)
 {
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
     printf("-> JZ(pc = 0x%08x)\n", addr);
@@ -337,14 +346,15 @@ bool handle_JZ(uint32_t args)
 bool handle_L(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> r%u := [0x%08x] ", reg, addr);
+    printf("-> r%u := [0x%08x] ", reg, addr + regs[addr_reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    int32_t value = *(int32_t*) (memory + addr);
+    int32_t value = *(int32_t*) (memory + addr + regs[addr_reg]);
 
     printf("(%d)\n", value);
 
@@ -366,24 +376,26 @@ bool handle_LR(uint32_t args)
 bool handle_ST(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> [0x%08x] := r%u (%d)\n", addr, reg, regs[reg]);
+    printf("-> [0x%08x] := r%u (%d)\n", addr + regs[addr_reg], reg, regs[reg]);
 
     if(addr >= mem_sz)
         return false;
 
-    *(int32_t*) (memory + addr) = regs[reg];
+    *(int32_t*) (memory + addr + regs[addr_reg]) = regs[reg];
     return true;
 }
 
 bool handle_LA(uint32_t args)
 {
     uint8_t reg = args & 0xf;
+    uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    printf("-> r%u := 0x%08x\n", reg, addr);
+    printf("-> r%u := 0x%08x\n", reg, addr + regs[addr_reg]);
 
-    regs[reg] = addr;
+    regs[reg] = addr + regs[addr_reg];
     return true;
 }
