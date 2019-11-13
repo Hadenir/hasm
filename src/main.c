@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "assembler.h"
+#include "display.h"
 #include "virtual_machine.h"
 
 int main(int argc, char* argv[])
@@ -22,6 +23,14 @@ int main(int argc, char* argv[])
     if(result != 0)
     {
         fprintf(stderr, "Error while assembling %s! Error code: %d\n", filename, result);
+        return result;
+    }
+
+    printf("Initializing console window...\n");
+    result = disp_init();
+    if(result != 0)
+    {
+        fprintf(stderr, "Error while initializing console window! Error code: %d\n", result);
         return result;
     }
 
@@ -46,6 +55,6 @@ int main(int argc, char* argv[])
     printf("Program exited. Virtual machine shutting down...\n");
     vm_finalize(&vm);
 
-    printf("Goodbye.");
+    printf("Goodbye.\n");
     return 0;
 }
