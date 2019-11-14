@@ -52,6 +52,8 @@ int main(int argc, char* argv[])
         return result;
     }
 
+    disp_print(&vm);
+
     printf("Program exited. Virtual machine shutting down...\n");
     vm_finalize(&vm);
 
