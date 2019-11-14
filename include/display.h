@@ -12,17 +12,34 @@
 #define HIGHLIGHT_COLOR (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE)
 #define CHANGE_COLOR (FOREGROUND_RED | FOREGROUND_INTENSITY)
 
+struct display
+{
+    void* console_handle;   // Windows (WinAPI) console handle.
+    int32_t* vm_regs;       // Copy of previously displayed values in registers.
+    uint8_t* vm_memory;     // Copy of previously displayed values in memory.
+} display;
+
 // Prepares console window to display virtual machine's state in a pretty way.
-int disp_init();
+int disp_init(struct virtual_machine* vm);
 
-// Prints interface.
-void disp_print(struct virtual_machine* vm);
+void disp_finilize();
 
-void disp_print_regs(struct virtual_machine* vm);
+// Updates interface information.
+// Returns different values depending on user intent:
+// 0 - exit
+// 1 - step forward
+// 3 - continue execution till end
+// 4 - restart
+int disp_update(struct virtual_machine* vm);
 
-void disp_print_mem(struct virtual_machine* vm);
+void update_internal_vm(struct virtual_machine* vm);
 
-void disp_print_code(struct virtual_machine* vm);
+// Helper functions for printing user interface.
+void print_regs(struct virtual_machine* vm);
+
+void print_mem(struct virtual_machine* vm);
+
+void print_code(struct virtual_machine* vm);
 
 // Clears console.
 void disp_clear();

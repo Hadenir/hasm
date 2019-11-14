@@ -26,14 +26,6 @@ int main(int argc, char* argv[])
         return result;
     }
 
-    printf("Initializing console window...\n");
-    result = disp_init();
-    if(result != 0)
-    {
-        fprintf(stderr, "Error while initializing console window! Error code: %d\n", result);
-        return result;
-    }
-
     struct virtual_machine vm;
 
     printf("Initializing virtual machine...\n");
@@ -44,18 +36,31 @@ int main(int argc, char* argv[])
         return result;
     }
 
-    printf("Executing %s...\n", filename);
-    result = vm_run(&vm);
+    printf("Initializing console window...\n");
+    result = disp_init(&vm);
     if(result != 0)
     {
-        fprintf(stderr, "Error while running %s! Error code: %d\n", filename, result);
+        fprintf(stderr, "Error while initializing console window! Error code: %d\n", result);
         return result;
     }
 
-    disp_print(&vm);
+    printf("Executing %s...\n", filename);
+    // result = vm_run(&vm);
+    // if(result != 0)
+    // {
+    //     fprintf(stderr, "Error while running %s! Error code: %d\n", filename, result);
+    //     return result;
+    // }
+
+    while(vm_step(&vm) != 1)
+    {
+        disp_update(&vm);
+    }
 
     printf("Program exited. Virtual machine shutting down...\n");
     vm_finalize(&vm);
+
+    disp_finilize();
 
     printf("Goodbye.\n");
     return 0;

@@ -12,10 +12,10 @@ OBJ_FILES = $(patsubst ${SRC_DIR}/%.c,${BUILD_DIR}/%.o,${SOURCE_FILES})
 all: ${BIN_DIR}/hasm.exe
 
 run: all
-	cmd /c start cmd /c "${BIN_DIR}\hasm.exe ${ARGV} & pause"
+	cmd /c start cmd /c "${BIN_DIR}\hasm.exe ${ARGV} && pause"
 
 debug: all
-	gdb ${BIN_DIR}/hasm.exe
+	gdb ${BIN_DIR}/hasm.exe ${ARGV}
 
 clean:
 	del /q /f /s ${BIN_DIR}\*

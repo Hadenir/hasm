@@ -118,7 +118,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
         }
     }
 
-    print_sym_table(sym_table);
+    // print_sym_table(sym_table);
 
     rewind(file);
     bool code_block = false;
