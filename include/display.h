@@ -9,6 +9,8 @@
 #define MEM_BLOCK_HEIGHT 31
 
 #define DEFAULT_COLOR (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
+#define HIGHLIGHT_COLOR (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE)
+#define CHANGE_COLOR (FOREGROUND_RED | FOREGROUND_INTENSITY)
 
 // Prepares console window to display virtual machine's state in a pretty way.
 int disp_init();

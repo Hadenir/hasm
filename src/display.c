@@ -91,25 +91,31 @@ void disp_print_regs(struct virtual_machine* vm)
 
 void disp_print_mem(struct virtual_machine* vm)
 {
+    // Horizontal labels.
     for(int i = 0; i < 16; ++i)
     {
         disp_cursor(CODE_BLOCK_WIDTH + 3 * i + 11, 1);
         printf("%02X", i);
+        putchar(179);
     }
 
+    // Vertical labels.
     for(int i = 0; i < 27; ++i)
     {
         disp_cursor(CODE_BLOCK_WIDTH + 4, i + 3);
-        printf("%04X ", i * 16);
+        printf("%04X:", i * 16);
     }
 
+    // Memory contents.
     for(int i = 0; i < vm->mem_sz && i < 27 * 16; ++i)
     {
         int x = i % 16;
         int y = i / 16;
 
         disp_cursor(CODE_BLOCK_WIDTH + 3 * x + 11, y + 3);
+        if((x + y) % 5 == 0 && x % 2 == 1) disp_color(CHANGE_COLOR);
         printf("%02X", vm->memory[i]);
+        disp_color(DEFAULT_COLOR);
     }
 }
 
