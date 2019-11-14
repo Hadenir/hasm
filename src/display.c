@@ -25,6 +25,11 @@ int disp_init(struct virtual_machine* vm)
     SetConsoleScreenBufferSize(display.console_handle, size);
     SetConsoleWindowInfo(display.console_handle, TRUE, &rect);
 
+    CONSOLE_CURSOR_INFO cursor_info;
+    cursor_info.dwSize = 100;
+    cursor_info.bVisible = FALSE;
+    SetConsoleCursorInfo(display.console_handle, &cursor_info);
+
     disp_clear();
 
     // Prepare user interface.
