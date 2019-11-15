@@ -1,22 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "prog_ptr.h"
-
-#define NUM_HANDLERS 32
-
-struct virtual_machine
-{
-    uint32_t pc;        // Address of next instruction to be executed.
-    int32_t flags;     // State flags register.
-    int32_t* regs;     // 16 general-purpose registers.
-    uint8_t* memory;    // Address of allocated memory for virtual machine.
-    uint32_t mem_sz;    // Size of allocated memory.
-};
-
-bool (*handlers[NUM_HANDLERS])(struct virtual_machine*, uint32_t);    // Array of handler functions for each assembler instruction.
+#include "common.h"
 
 // Initializes virtual machine
 int vm_init(struct prog_ptr prog_ptr, struct virtual_machine* vm);
@@ -26,6 +10,9 @@ int vm_run(struct virtual_machine* vm);
 
 // Executes one cycle on virtual machine.
 int vm_step(struct virtual_machine* vm);
+
+// Executes n cycles on virtual machine.
+int vm_forward(struct virtual_machine* vm, int n);
 
 // Does some clenup after virtual machine.
 void vm_finalize(struct virtual_machine* vm);

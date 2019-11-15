@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assembler.h"
 #include "virtual_machine.h"
 
 #define DISPLAY_WIDTH 150
@@ -30,7 +31,7 @@ void disp_finilize();
 // 1 - step forward
 // 3 - continue execution till end
 // 4 - restart
-int disp_update(struct virtual_machine* vm);
+int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
 
 void update_internal_vm(struct virtual_machine* vm);
 
@@ -39,7 +40,7 @@ void print_regs(struct virtual_machine* vm);
 
 void print_mem(struct virtual_machine* vm);
 
-void print_code(struct virtual_machine* vm);
+void print_code(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
 
 // Clears console.
 void disp_clear();
