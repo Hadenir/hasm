@@ -162,14 +162,14 @@ void print_code(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
         printf("%3d", line);
         putchar(179);
 
-        uint32_t bytecode = vm->memory[addr];
-        struct instruction* inst = get_inst_opcode(bytecode & 0xff);
+        uint32_t bytecode = *(uint32_t*) (vm->memory + addr);
+        const struct instruction* inst = get_inst_opcode(bytecode & 0xff);
         disassemble(inst, bytecode, string);
 
         if(addr == vm->pc)
             disp_color(HIGHLIGHT_COLOR);
 
-        printf(" 0x%08x", bytecode);
+        printf(" 0x%04x", addr);
         printf(" %s", string);
 
         disp_color(DEFAULT_COLOR);

@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     //     return result;
     // }
 
-    while(vm_forward(&vm, 7) != 1)
+    while(vm_forward(&vm, 100) != 1)
     {
         disp_update(&vm, &prog_ptr);
     }
