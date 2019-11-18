@@ -1,5 +1,7 @@
 #include "display.h"
 
+#include <conio.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -7,10 +9,15 @@
 #include "assembler.h"
 #include "instruction.h"
 
-int disp_init(struct virtual_machine* vm)
+int disp_init(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
 {
     display.vm_regs = malloc(16 * 4);
     display.vm_memory = malloc(vm->mem_sz);
+    display.status = malloc(DISPLAY_WIDTH - 40);
+    display.mem_scroll = 0;
+    display.mem_max_scroll = vm->mem_sz / 16 - 10;
+    display.code_scroll = 0;
+    display.code_max_scroll = 150;  // TODO: Fix that!
     update_internal_vm(vm);
 
     display.console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -35,8 +42,69 @@ int disp_init(struct virtual_machine* vm)
 
     disp_clear();
 
-    // Prepare user interface.
+    return 0;
+}
 
+void disp_finilize()
+{
+    free(display.vm_regs);
+    free(display.vm_memory);
+}
+
+void disp_status(const char* status)
+{
+    strcpy_s(display.status, DISPLAY_WIDTH - 40, status);
+}
+
+int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
+{
+    int action = -1;
+
+    print_regs(vm);
+    print_code(vm, prog_ptr);
+
+    // Waiting for user input.
+    while(action < 0)
+    {
+        print_grid();
+        print_mem(vm);
+
+        int ch = getch();
+        // printf("%u ", ch);
+        switch(ch)
+        {
+            case ESCAPE_KEY:
+                action = 0;
+                break;
+            case SPACE_KEY:
+                action = 1;
+                break;
+            case RETURN_KEY:
+                action = 2;
+                break;
+            default:
+                ch = getch();
+                if(ch == ARROW_UP_KEY && display.mem_scroll > 0)
+                    display.mem_scroll -= 1;
+                else if(ch == ARROW_DOWN_KEY && display.mem_scroll < display.mem_max_scroll)
+                    display.mem_scroll += 1;
+                break;
+        }
+        Sleep(1);
+    }
+
+    update_internal_vm(vm);
+    return action;
+}
+
+void update_internal_vm(struct virtual_machine* vm)
+{
+    memcpy(display.vm_regs, vm->regs, 16 * 4);
+    memcpy(display.vm_memory, vm->memory, vm->mem_sz);
+}
+
+void print_grid()
+{
     for(int y = 0; y < DISPLAY_HEIGHT - 1; ++y)
     {
         disp_cursor(CODE_BLOCK_WIDTH, y);
@@ -48,9 +116,20 @@ int disp_init(struct virtual_machine* vm)
         putchar(254);
 
     // Scrollbars
-    disp_cursor(CODE_BLOCK_WIDTH - 1, 0);
+    for(int y = 0; y < DISPLAY_HEIGHT - 1; ++y)
+    {
+        disp_cursor(CODE_BLOCK_WIDTH - 1, y);
+        putchar(' ');
+    }
+    disp_cursor(CODE_BLOCK_WIDTH - 1, (DISPLAY_HEIGHT - 2) * ((float) display.code_scroll / display.code_max_scroll));
     putchar(177);
-    disp_cursor(DISPLAY_WIDTH - 1, 0);
+
+    for(int y = 0; y < MEM_BLOCK_HEIGHT; ++y)
+    {
+        disp_cursor(DISPLAY_WIDTH - 1, y);
+        putchar(' ');
+    }
+    disp_cursor(DISPLAY_WIDTH - 1, (MEM_BLOCK_HEIGHT - 1) * ((float) display.mem_scroll / display.mem_max_scroll));
     putchar(177);
 
     // Status bar
@@ -58,37 +137,14 @@ int disp_init(struct virtual_machine* vm)
     COORD status_bar;
     status_bar.X = 0;
     status_bar.Y = DISPLAY_HEIGHT - 1;
-    FillConsoleOutputAttribute(display.console_handle, BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE, DISPLAY_WIDTH, status_bar, &written);
+    FillConsoleOutputAttribute(display.console_handle, HIGHLIGHT_COLOR, DISPLAY_WIDTH, status_bar, &written);
 
-    disp_cursor(0, 0);
-
-    return 0;
-}
-
-void disp_finilize()
-{
-
-
-    // TODO: disp_clear();
-}
-
-int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
-{
-    print_regs(vm);
-    print_mem(vm);
-    print_code(vm, prog_ptr);
-
-    update_internal_vm(vm);
-
-    disp_cursor(0, 0);
-
-    return 1;
-}
-
-void update_internal_vm(struct virtual_machine* vm)
-{
-    memcpy(display.vm_regs, vm->regs, 16 * 4);
-    memcpy(display.vm_memory, vm->memory, vm->mem_sz);
+    disp_color(HIGHLIGHT_COLOR);
+    disp_cursor(0, DISPLAY_HEIGHT - 1);
+    printf(display.status);
+    disp_cursor(DISPLAY_WIDTH - 40, DISPLAY_HEIGHT - 1);
+    printf("SPACE=step  ENTER=continue  ESCAPE=exit");
+    disp_color(DEFAULT_COLOR);
 }
 
 void print_regs(struct virtual_machine* vm)
@@ -138,21 +194,28 @@ void print_mem(struct virtual_machine* vm)
     for(int i = 0; i < 27; ++i)
     {
         disp_cursor(CODE_BLOCK_WIDTH + 4, i + 3);
-        printf("%04X:", i * 16);
+        printf("%04X:", (i + display.mem_scroll) * 16);
     }
 
     // Memory contents.
-    for(int i = 0; i < vm->mem_sz && i < 27 * 16; ++i)
+    for(int i = 0; i < 27 * 16; ++i)
     {
         int x = i % 16;
         int y = i / 16;
 
+        int idx = i + display.mem_scroll * 16;
         disp_cursor(CODE_BLOCK_WIDTH + 3 * x + 11, y + 3);
-        if(vm->memory[i] != display.vm_memory[i])
-            disp_color(CHANGE_COLOR);
-        printf("%02X", vm->memory[i]);
-
-        disp_color(DEFAULT_COLOR);
+        if(idx < vm->mem_sz)
+        {
+            if(vm->memory[idx] != display.vm_memory[idx])
+                disp_color(CHANGE_COLOR);
+            printf("%02X", vm->memory[idx]);
+            disp_color(DEFAULT_COLOR);
+        }
+        else
+        {
+            printf("   ");
+        }
     }
 }
 
@@ -174,12 +237,14 @@ void print_code(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
         if(addr == vm->pc)
             disp_color(HIGHLIGHT_COLOR);
 
-        printf(" 0x%04x", addr);
-        printf(" %s", string);
+        printf(" 0x%04x   ", addr);
+        printf("%s", string);
 
         disp_color(DEFAULT_COLOR);
         addr += inst->width;
     }
+
+    free(string);
 }
 
 void disp_clear()

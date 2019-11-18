@@ -1,3 +1,4 @@
+#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,29 +38,41 @@ int main(int argc, char* argv[])
     }
 
     printf("Initializing console window...\n");
-    result = disp_init(&vm);
+    result = disp_init(&vm, &prog_ptr);
     if(result != 0)
     {
         fprintf(stderr, "Error while initializing console window! Error code: %d\n", result);
         return result;
     }
 
-    printf("Executing %s...\n", filename);
-    // result = vm_run(&vm);
-    // if(result != 0)
-    // {
-    //     fprintf(stderr, "Error while running %s! Error code: %d\n", filename, result);
-    //     return result;
-    // }
+    char status[100];
+    sprintf(status, "Executing %s...", filename);
+    disp_status(status);
 
-    while(vm_forward(&vm, 100) != 1)
+    int action;
+    while(result == 0)
     {
-        disp_update(&vm, &prog_ptr);
+        action = disp_update(&vm, &prog_ptr);
+        switch(action)
+        {
+            case 0:
+                result = 1;
+                break;
+            case 1:
+                result = vm_step(&vm);
+                break;
+            case 2:
+                result = vm_run(&vm);
+                break;
+        }
     }
 
-    printf("Program exited. Virtual machine shutting down...\n");
-    vm_finalize(&vm);
+    sprintf(status, "Program exited with code 0x%02x. Press any key to quit...", result);
+    disp_status(status);
+    disp_update(&vm, &prog_ptr);
+    disp_clear();
 
+    vm_finalize(&vm);
     disp_finilize();
 
     printf("Goodbye.\n");

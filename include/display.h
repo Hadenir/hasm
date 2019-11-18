@@ -13,29 +13,44 @@
 #define HIGHLIGHT_COLOR (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE)
 #define CHANGE_COLOR (FOREGROUND_RED | FOREGROUND_INTENSITY)
 
+#define ARROW_UP_KEY 72
+#define ARROW_DOWN_KEY 80
+#define SPACE_KEY 32
+#define RETURN_KEY 13
+#define ESCAPE_KEY 27
+
 struct display
 {
     void* console_handle;   // Windows (WinAPI) console handle.
     int32_t* vm_regs;       // Copy of previously displayed values in registers.
     uint8_t* vm_memory;     // Copy of previously displayed values in memory.
+    uint32_t mem_scroll;
+    uint32_t mem_max_scroll;
+    uint32_t code_scroll;
+    uint32_t code_max_scroll;
+    char* status;
 } display;
 
 // Prepares console window to display virtual machine's state in a pretty way.
-int disp_init(struct virtual_machine* vm);
+int disp_init(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
 
 void disp_finilize();
+
+// Update text on status bar.
+void disp_status(const char* status);
 
 // Updates interface information.
 // Returns different values depending on user intent:
 // 0 - exit
 // 1 - step forward
-// 3 - continue execution till end
-// 4 - restart
+// 2 - continue execution till end
 int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
 
 void update_internal_vm(struct virtual_machine* vm);
 
 // Helper functions for printing user interface.
+void print_grid();
+
 void print_regs(struct virtual_machine* vm);
 
 void print_mem(struct virtual_machine* vm);

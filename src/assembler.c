@@ -55,7 +55,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
             continue;
 
         uint32_t offset = 0;
-        uint32_t chars_read = 0;
+        int32_t chars_read = 0;
 
         if(sscanf(line, "%63s %n", token, &chars_read) == 0)
         {
@@ -134,7 +134,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
             continue;
 
         uint32_t offset = 0;
-        uint32_t chars_read = 0;
+        int32_t chars_read = 0;
 
         if(sscanf(line, "%63s %n", token, &chars_read) == 0)
         {
