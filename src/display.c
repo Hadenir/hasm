@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <windows.h>
 
+#include "assembler.h"
+#include "instruction.h"
+
 int disp_init(struct virtual_machine* vm)
 {
     display.vm_regs = malloc(16 * 4);
@@ -69,11 +72,11 @@ void disp_finilize()
     // TODO: disp_clear();
 }
 
-int disp_update(struct virtual_machine* vm)
+int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
 {
     print_regs(vm);
     print_mem(vm);
-    print_code(vm);
+    print_code(vm, prog_ptr);
 
     update_internal_vm(vm);
 
@@ -128,7 +131,7 @@ void print_mem(struct virtual_machine* vm)
     {
         disp_cursor(CODE_BLOCK_WIDTH + 3 * i + 11, 1);
         printf("%02X", i);
-        putchar(179);
+        // putchar(179);
     }
 
     // Vertical labels.
@@ -153,9 +156,30 @@ void print_mem(struct virtual_machine* vm)
     }
 }
 
-void print_code(struct virtual_machine* vm)
+void print_code(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
 {
+    uint16_t addr = prog_ptr->entry_addr;
 
+    char* string = malloc(CODE_BLOCK_WIDTH - 18);
+    for(int line = 1; line < DISPLAY_HEIGHT; ++line)
+    {
+        disp_cursor(0, line - 1);
+        printf("%3d", line);
+        putchar(179);
+
+        uint32_t bytecode = *(uint32_t*) (vm->memory + addr);
+        const struct instruction* inst = get_inst_opcode(bytecode & 0xff);
+        disassemble(inst, bytecode, string);
+
+        if(addr == vm->pc)
+            disp_color(HIGHLIGHT_COLOR);
+
+        printf(" 0x%04x", addr);
+        printf(" %s", string);
+
+        disp_color(DEFAULT_COLOR);
+        addr += inst->width;
+    }
 }
 
 void disp_clear()

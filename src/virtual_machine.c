@@ -19,25 +19,25 @@ int vm_init(struct prog_ptr prog_ptr, struct virtual_machine* vm)
     vm->flags = 0;
     vm->regs = calloc(16, 4);  // Allocate vm->memory for an array of 16 32-bit registers.
 
-    handlers[0x00] = handle_NOP;
-    handlers[0x02] = handle_A;
-    handlers[0x03] = handle_AR;
-    handlers[0x04] = handle_S;
-    handlers[0x05] = handle_SR;
-    handlers[0x06] = handle_M;
-    handlers[0x07] = handle_MR;
-    handlers[0x08] = handle_D;
-    handlers[0x09] = handle_DR;
-    handlers[0x0a] = handle_C;
-    handlers[0x0b] = handle_CR;
-    handlers[0x0c] = handle_J;
-    handlers[0x0d] = handle_JP;
-    handlers[0x0e] = handle_JN;
-    handlers[0x0f] = handle_JZ;
-    handlers[0x10] = handle_L;
-    handlers[0x11] = handle_LR;
-    handlers[0x12] = handle_ST;
-    handlers[0x14] = handle_LA;
+    vm->handlers[0x00] = handle_NOP;
+    vm->handlers[0x02] = handle_A;
+    vm->handlers[0x03] = handle_AR;
+    vm->handlers[0x04] = handle_S;
+    vm->handlers[0x05] = handle_SR;
+    vm->handlers[0x06] = handle_M;
+    vm->handlers[0x07] = handle_MR;
+    vm->handlers[0x08] = handle_D;
+    vm->handlers[0x09] = handle_DR;
+    vm->handlers[0x0a] = handle_C;
+    vm->handlers[0x0b] = handle_CR;
+    vm->handlers[0x0c] = handle_J;
+    vm->handlers[0x0d] = handle_JP;
+    vm->handlers[0x0e] = handle_JN;
+    vm->handlers[0x0f] = handle_JZ;
+    vm->handlers[0x10] = handle_L;
+    vm->handlers[0x11] = handle_LR;
+    vm->handlers[0x12] = handle_ST;
+    vm->handlers[0x14] = handle_LA;
 
     return 0;
 }
@@ -45,7 +45,7 @@ int vm_init(struct prog_ptr prog_ptr, struct virtual_machine* vm)
 int vm_run(struct virtual_machine* vm)
 {
     int result = 0;
-    while(vm->pc < vm->mem_sz)  // Execute until there are no more instructions to perform.
+    for(;;)
     {
         result = vm_step(vm);
         if(result != 0)
@@ -57,7 +57,7 @@ int vm_run(struct virtual_machine* vm)
 
 int vm_step(struct virtual_machine* vm)
 {
-    if(vm->pc >= vm->mem_sz)
+    if(vm->pc >= vm->mem_sz)    // No more instructions to perform.
         return 1;
 
     uint8_t opcode = 0;
@@ -78,8 +78,24 @@ int vm_step(struct virtual_machine* vm)
     vm->pc += reg_inst ? 2 : 4; /* Next instruction is 2 bytes further if current instruction is register-register,
                                 otherwise we need to skip 4 bytes (register-vm->memory instruction). */
 
-    if(!handlers[opcode](vm, args))
+    if(!vm->handlers[opcode](vm, args))
         return 2;
+
+    return 0;
+}
+
+int vm_forward(struct virtual_machine* vm, int n)
+{
+    if(n <= 0)
+        return 0;
+
+    int result = 0;
+    for(int i = 0; i < n; ++i)
+    {
+        result = vm_step(vm);
+        if(result != 0)
+            return result;
+    }
 
     return 0;
 }

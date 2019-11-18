@@ -6,32 +6,32 @@
 #include <string.h>
 
 #include "sym_table.h"
-#include "test.h"
 
 #define NUM_INSTRUCTIONS 19
 #define MAX_TOKEN_LENGTH 64
 #define MAX_LINE_LENGTH 256
 
+// List of all supported instructions.
 const struct instruction instructions[NUM_INSTRUCTIONS] = {
-    {"NOP", 0x00, 4, &assemble_nop},        // Perform no operation.
-    {"A",  0x02, 4, &assemble_mem_and_reg}, // Add value in memory to value in a register.
-    {"AR", 0x03, 2, &assemble_reg_and_reg}, // Add value in a register to value in another one.
-    {"S",  0x04, 4, &assemble_mem_and_reg}, // Substract value in memory from value in a register.
-    {"SR", 0x05, 2, &assemble_reg_and_reg}, // Substract value in a register from value in another one.
-    {"M",  0x06, 4, &assemble_mem_and_reg}, // Multiply value in memory with value in a register.
-    {"MR", 0x07, 2, &assemble_reg_and_reg}, // Multiply value in a register with value in another one.
-    {"D",  0x08, 4, &assemble_mem_and_reg}, // Divide value in a register by value in memory.
-    {"DR", 0x09, 2, &assemble_reg_and_reg}, // Divide value in a register by value in another one.
-    {"C",  0x0a, 4, &assemble_mem_and_reg}, // Compare value in memory to value in a regsiter.
-    {"CR", 0x0b, 2, &assemble_reg_and_reg}, // Compare value in register to value in another one.
-    {"J",  0x0c, 4, &assemble_jump},        // Perform unconditional jump.
-    {"JP", 0x0d, 4, &assemble_jump},        // Perform jump if the result of previous instruction was positive.
-    {"JN", 0x0e, 4, &assemble_jump},        // Perform jump if the result of previous instruction was negative.
-    {"JZ", 0x0f, 4, &assemble_jump},        // Perform jump if the result of previous instruction was zero.
-    {"L",  0x10, 4, &assemble_mem_and_reg}, // Load value in memory into a register.
-    {"LR", 0x11, 2, &assemble_reg_and_reg}, // Load value in a register into another one.
-    {"ST", 0x12, 4, &assemble_mem_and_reg}, // Store in memory value in a register.
-    {"LA", 0x14, 4, &assemble_mem_and_reg}, // Load address in memory into a register.
+    {"NOP", 0x00, 4, &assemble_nop, &disassemble_nop},                  // Perform no operation.
+    {"A",  0x02, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Add value in memory to value in a register.
+    {"AR", 0x03, 2, &assemble_reg_and_reg, &disassemble_reg_and_reg},   // Add value in a register to value in another one.
+    {"S",  0x04, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Substract value in memory from value in a register.
+    {"SR", 0x05, 2, &assemble_reg_and_reg, &disassemble_reg_and_reg},   // Substract value in a register from value in another one.
+    {"M",  0x06, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Multiply value in memory with value in a register.
+    {"MR", 0x07, 2, &assemble_reg_and_reg, &disassemble_reg_and_reg},   // Multiply value in a register with value in another one.
+    {"D",  0x08, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Divide value in a register by value in memory.
+    {"DR", 0x09, 2, &assemble_reg_and_reg, &disassemble_reg_and_reg},   // Divide value in a register by value in another one.
+    {"C",  0x0a, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Compare value in memory to value in a regsiter.
+    {"CR", 0x0b, 2, &assemble_reg_and_reg, &disassemble_reg_and_reg},   // Compare value in register to value in another one.
+    {"J",  0x0c, 4, &assemble_jump, &disassemble_jump},                 // Perform unconditional jump.
+    {"JP", 0x0d, 4, &assemble_jump, &disassemble_jump},                 // Perform jump if the result of previous instruction was positive.
+    {"JN", 0x0e, 4, &assemble_jump, &disassemble_jump},                 // Perform jump if the result of previous instruction was negative.
+    {"JZ", 0x0f, 4, &assemble_jump, &disassemble_jump},                 // Perform jump if the result of previous instruction was zero.
+    {"L",  0x10, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Load value in memory into a register.
+    {"LR", 0x11, 2, &assemble_reg_and_reg, &disassemble_reg_and_reg},   // Load value in a register into another one.
+    {"ST", 0x12, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Store in memory value in a register.
+    {"LA", 0x14, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Load address in memory into a register.
 };
 
 int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
@@ -250,6 +250,19 @@ const struct instruction* get_inst(const char* mnemonic)
     return NULL;
 }
 
+const struct instruction* get_inst_opcode(uint32_t opcode)
+{
+    const struct instruction* inst;
+    for(int i = 0; i < NUM_INSTRUCTIONS; ++i)
+    {
+        inst = &instructions[i];
+        if(inst->opcode == opcode)
+            return inst;
+    }
+
+    return NULL;
+}
+
 uint32_t assemble_nop(const struct instruction* self, const char* args, const struct sym_table* sym_table)
 {
     uint32_t bytecode = 0;
@@ -331,4 +344,39 @@ uint32_t assemble_jump(const struct instruction* self, const char* args, const s
 
     free(label);
     return bytecode;
+}
+
+void disassemble_nop(const struct instruction* self, uint32_t bytecode, char* str)
+{
+    str[0] = '\0';
+
+    strcat(str, self->mnemonic);
+}
+
+void disassemble_reg_and_reg(const struct instruction* self, uint32_t bytecode, char* str)
+{
+    uint32_t reg1 = (bytecode >> 8) & 0xf;
+    uint32_t reg2 = (bytecode >> 12) & 0xf;
+    sprintf(str, "%s %u, %u", self->mnemonic, reg1, reg2);
+}
+
+void disassemble_mem_and_reg(const struct instruction* self, uint32_t bytecode, char* str)
+{
+    uint32_t reg = (bytecode >> 8) & 0xf;
+    uint8_t addr_reg = (bytecode >> 12) & 0xf;
+    uint16_t addr = (bytecode >> 16) & 0xffff;
+    if(addr_reg == 14)
+        sprintf(str, "%s %u, 0x%04x", self->mnemonic, reg, addr);
+    else
+        sprintf(str, "%s %u, %u(0x%04x)", self->mnemonic, reg, addr_reg, addr);
+}
+
+void disassemble_jump(const struct instruction* self, uint32_t bytecode, char* str)
+{
+    uint8_t addr_reg = (bytecode >> 12) & 0xf;
+    uint16_t addr = (bytecode >> 16) & 0xffff;
+    if(addr_reg == 14)
+        sprintf(str, "%s 0x%04x", self->mnemonic, addr);
+    else
+        sprintf(str, "%s %u(0x%04x)", self->mnemonic, addr_reg, addr);
 }

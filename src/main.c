@@ -52,9 +52,9 @@ int main(int argc, char* argv[])
     //     return result;
     // }
 
-    while(vm_step(&vm) != 1)
+    while(vm_forward(&vm, 100) != 1)
     {
-        disp_update(&vm);
+        disp_update(&vm, &prog_ptr);
     }
 
     printf("Program exited. Virtual machine shutting down...\n");

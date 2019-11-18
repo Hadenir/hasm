@@ -1,5 +1,6 @@
 #include "test.h"
 
+// TODO: Delet dis
 void print_sym_table(const struct sym_table* sym_table)
 {
     if(sym_table == NULL)
