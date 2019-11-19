@@ -34,9 +34,9 @@ const struct instruction instructions[NUM_INSTRUCTIONS] = {
     {"LA", 0x14, 4, &assemble_mem_and_reg, &disassemble_mem_and_reg},   // Load address in memory into a register.
 };
 
-int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
+int hasm_assemble(const char* filename, struct program* program)
 {
-    if(filename == NULL || prog_ptr == NULL)
+    if(filename == NULL || program == NULL)
         return 1;
 
     FILE* file = fopen(filename, "r");
@@ -47,10 +47,14 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
     char* token = malloc(MAX_TOKEN_LENGTH);
     uint16_t curr_addr = 0;
     struct sym_table* sym_table = NULL;
+    struct source_code* source_code = NULL;
 
     // First pass over file collects symbols (labels) and stores addresses they point to.
+    // Also source_code structure is created here.
     while(fgets(line, MAX_LINE_LENGTH, file))
     {
+        source_code_push_back(&source_code, curr_addr, line);
+
         if(line[0] == '\n' || line[0] == '\r' || line[0] == '#')
             continue;
 
@@ -59,7 +63,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
 
         if(sscanf(line, "%63s %n", token, &chars_read) == 0)
         {
-            sym_table_free(sym_table);
+            sym_table_free(&sym_table);
             free(token);
             free(line);
             return 3;
@@ -86,7 +90,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
             // We saved the label, so we can now read instruction to know if it's 2- or 4-bytes long.
             if(sscanf(line + offset, "%63s %n", token, &chars_read) == 0)
             {
-                sym_table_free(sym_table);
+                sym_table_free(&sym_table);
                 free(token);
                 free(line);
                 return 3;
@@ -107,7 +111,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
                 const struct instruction* inst = get_inst(token);
                 if(inst == NULL)    // Unrecognized instruction mnemonic.
                 {
-                    sym_table_free(sym_table);
+                    sym_table_free(&sym_table);
                     free(token);
                     free(line);
                     return 4;
@@ -138,7 +142,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
 
         if(sscanf(line, "%63s %n", token, &chars_read) == 0)
         {
-            sym_table_free(sym_table);
+            sym_table_free(&sym_table);
             free(token);
             free(line);
             return 3;
@@ -152,7 +156,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
         {
             if(sscanf(line + offset, "%63s %n", token, &chars_read) == 0)
             {
-                sym_table_free(sym_table);
+                sym_table_free(&sym_table);
                 free(token);
                 free(line);
                 return 3;
@@ -166,7 +170,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
         {
             if(sscanf(line + offset, "%63[^\t\r\n]", token) == 0)
             {
-                sym_table_free(sym_table);
+                sym_table_free(&sym_table);
                 free(token);
                 free(line);
                 return 3;
@@ -175,7 +179,7 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
             uint32_t bytecode = assemble(inst, token, sym_table);
             if(bytecode == UINT32_MAX)
             {
-                sym_table_free(sym_table);
+                sym_table_free(&sym_table);
                 free(token);
                 free(line);
                 return 4;
@@ -222,11 +226,12 @@ int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr)
         }
     }
 
-    prog_ptr->mem_sz = mem_sz;
-    prog_ptr->entry_addr = entry_addr;
-    prog_ptr->mem_ptr = mem;
+    program->mem_sz = mem_sz;
+    program->entry_addr = entry_addr;
+    program->mem_ptr = mem;
+    program->source = source_code;
 
-    sym_table_free(sym_table);
+    sym_table_free(&sym_table);
     free(line);
     free(token);
     return 0;

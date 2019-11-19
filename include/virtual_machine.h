@@ -3,7 +3,7 @@
 #include "common.h"
 
 // Initializes virtual machine
-int vm_init(struct prog_ptr prog_ptr, struct virtual_machine* vm);
+int vm_init(struct program program, struct virtual_machine* vm);
 
 // Starts executing code.
 int vm_run(struct virtual_machine* vm);

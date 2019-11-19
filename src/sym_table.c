@@ -54,12 +54,12 @@ void sym_table_push_back(struct sym_table** sym_table, const char* name, uint16_
     current->next = new;
 }
 
-void sym_table_free(struct sym_table* sym_table)
+void sym_table_free(struct sym_table** sym_table)
 {
-    if(sym_table == NULL)
+    if(*sym_table == NULL)
         return;
 
-    struct sym_table* current = sym_table;
+    struct sym_table* current = *sym_table;
     struct sym_table* next;
     while(current != NULL)
     {
@@ -70,5 +70,5 @@ void sym_table_free(struct sym_table* sym_table)
         current = next;
     }
 
-    sym_table = NULL;
+    *sym_table = NULL;
 }

@@ -4,7 +4,7 @@
 #include "instruction.h"
 
 // Parses input file and truns code into bytecode to be executed on virtual machine.
-int hasm_assemble(const char* filename, struct prog_ptr* prog_ptr);
+int hasm_assemble(const char* filename, struct program* program);
 
 // Puts 32-bit value inside program memory at specfied address.
 void mem_place_value(uint8_t* mem, int16_t addr, uint32_t value);

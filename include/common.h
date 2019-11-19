@@ -3,14 +3,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "source_code.h"
+
 #define NUM_HANDLERS 32
 
 // Stores information about program to be executed by virtual machine.
-struct prog_ptr
+struct program
 {
-    uint16_t mem_sz;        // Size of program code.
-    uint16_t entry_addr;    // Address of first instruction to be executed.
-    uint8_t* mem_ptr;       // Pointer to block of mem_sz bytes where program code is stored.
+    uint16_t mem_sz;            // Size of program code.
+    uint16_t entry_addr;        // Address of first instruction to be executed.
+    uint8_t* mem_ptr;           // Pointer to block of mem_sz bytes where program code is stored.
+    struct source_code* source; // Program's source code.
 };
 
 // Stores whole state of virtual machine.

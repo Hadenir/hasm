@@ -27,12 +27,11 @@ struct display
     uint32_t mem_scroll;
     uint32_t mem_max_scroll;
     uint32_t code_scroll;
-    uint32_t code_max_scroll;
     char* status;
 } display;
 
 // Prepares console window to display virtual machine's state in a pretty way.
-int disp_init(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
+int disp_init(struct virtual_machine* vm, struct program* program);
 
 void disp_finilize();
 
@@ -44,7 +43,7 @@ void disp_status(const char* status);
 // 0 - exit
 // 1 - step forward
 // 2 - continue execution till end
-int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
+int disp_update(struct virtual_machine* vm, struct program* program);
 
 void update_internal_vm(struct virtual_machine* vm);
 
@@ -55,7 +54,7 @@ void print_regs(struct virtual_machine* vm);
 
 void print_mem(struct virtual_machine* vm);
 
-void print_code(struct virtual_machine* vm, struct prog_ptr* prog_ptr);
+void print_code(struct virtual_machine* vm, struct program* program);
 
 // Clears console.
 void disp_clear();

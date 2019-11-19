@@ -19,4 +19,4 @@ uint16_t sym_table_get(const struct sym_table* sym_table, const char* name);
 void sym_table_push_back(struct sym_table** sym_table, const char* name, uint16_t addr);
 
 // Deallocates whole symbol table.
-void sym_table_free(struct sym_table* sym_table);
+void sym_table_free(struct sym_table** sym_table);

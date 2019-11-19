@@ -6,6 +6,9 @@
 #include "display.h"
 #include "virtual_machine.h"
 
+// TODO: Get rid of some malloc()'s
+// TODO: Cleaning, as always
+
 int main(int argc, char* argv[])
 {
     if(argc != 2)
@@ -16,11 +19,11 @@ int main(int argc, char* argv[])
 
     int result;
 
-    struct prog_ptr prog_ptr;
+    struct program program;
     const char* filename = argv[1];
 
     printf("Assembling %s...\n", filename);
-    result = hasm_assemble(filename, &prog_ptr);
+    result = hasm_assemble(filename, &program);
     if(result != 0)
     {
         fprintf(stderr, "Error while assembling %s! Error code: %d\n", filename, result);
@@ -30,7 +33,7 @@ int main(int argc, char* argv[])
     struct virtual_machine vm;
 
     printf("Initializing virtual machine...\n");
-    result = vm_init(prog_ptr, &vm);
+    result = vm_init(program, &vm);
     if(result != 0)
     {
         fprintf(stderr, "Error while initializing virtual machine! Error code: %d\n", result);
@@ -38,7 +41,7 @@ int main(int argc, char* argv[])
     }
 
     printf("Initializing console window...\n");
-    result = disp_init(&vm, &prog_ptr);
+    result = disp_init(&vm, &program);
     if(result != 0)
     {
         fprintf(stderr, "Error while initializing console window! Error code: %d\n", result);
@@ -52,7 +55,7 @@ int main(int argc, char* argv[])
     int action;
     while(result == 0)
     {
-        action = disp_update(&vm, &prog_ptr);
+        action = disp_update(&vm, &program);
         switch(action)
         {
             case 0:
@@ -69,10 +72,11 @@ int main(int argc, char* argv[])
 
     sprintf(status, "Program exited with code 0x%02x. Press any key to quit...", result);
     disp_status(status);
-    disp_update(&vm, &prog_ptr);
+    disp_update(&vm, &program);
     disp_clear();
 
     vm_finalize(&vm);
+    source_code_free(&program.source);
     disp_finilize();
 
     printf("Goodbye.\n");

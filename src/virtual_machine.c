@@ -4,11 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int vm_init(struct prog_ptr prog_ptr, struct virtual_machine* vm)
+int vm_init(struct program program, struct virtual_machine* vm)
 {
-    vm->mem_sz = prog_ptr.mem_sz;
-    vm->memory = prog_ptr.mem_ptr;
-    vm->pc = prog_ptr.entry_addr;
+    vm->mem_sz = program.mem_sz;
+    vm->memory = program.mem_ptr;
+    vm->pc = program.entry_addr;
 
     if(vm->memory == NULL || vm->mem_sz == 0)   // vm->memory cannot point to null nor be size of zero.
         return 1;

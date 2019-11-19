@@ -9,7 +9,7 @@
 #include "assembler.h"
 #include "instruction.h"
 
-int disp_init(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
+int disp_init(struct virtual_machine* vm, struct program* program)
 {
     display.vm_regs = malloc(16 * 4);
     display.vm_memory = malloc(vm->mem_sz);
@@ -17,7 +17,6 @@ int disp_init(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
     display.mem_scroll = 0;
     display.mem_max_scroll = vm->mem_sz / 16 - 10;
     display.code_scroll = 0;
-    display.code_max_scroll = 150;  // TODO: Fix that!
     update_internal_vm(vm);
 
     display.console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -56,18 +55,18 @@ void disp_status(const char* status)
     strcpy_s(display.status, DISPLAY_WIDTH - 40, status);
 }
 
-int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
+int disp_update(struct virtual_machine* vm, struct program* program)
 {
     int action = -1;
 
     print_regs(vm);
-    print_code(vm, prog_ptr);
+    print_mem(vm);
+    print_code(vm, program);
 
     // Waiting for user input.
     while(action < 0)
     {
         print_grid();
-        print_mem(vm);
 
         int ch = getch();
         // printf("%u ", ch);
@@ -82,12 +81,29 @@ int disp_update(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
             case RETURN_KEY:
                 action = 2;
                 break;
+            case 'w':
+                if(display.code_scroll > 0)
+                {
+                    display.code_scroll -= 1;
+                    print_code(vm, program);
+                }
+                break;
+            case 's':
+                display.code_scroll += 1;
+                print_code(vm, program);
+                break;
             default:
                 ch = getch();
                 if(ch == ARROW_UP_KEY && display.mem_scroll > 0)
+                {
                     display.mem_scroll -= 1;
+                    print_mem(vm);
+                }
                 else if(ch == ARROW_DOWN_KEY && display.mem_scroll < display.mem_max_scroll)
+                {
                     display.mem_scroll += 1;
+                    print_mem(vm);
+                }
                 break;
         }
         Sleep(1);
@@ -116,14 +132,6 @@ void print_grid()
         putchar(254);
 
     // Scrollbars
-    for(int y = 0; y < DISPLAY_HEIGHT - 1; ++y)
-    {
-        disp_cursor(CODE_BLOCK_WIDTH - 1, y);
-        putchar(' ');
-    }
-    disp_cursor(CODE_BLOCK_WIDTH - 1, (DISPLAY_HEIGHT - 2) * ((float) display.code_scroll / display.code_max_scroll));
-    putchar(177);
-
     for(int y = 0; y < MEM_BLOCK_HEIGHT; ++y)
     {
         disp_cursor(DISPLAY_WIDTH - 1, y);
@@ -219,32 +227,34 @@ void print_mem(struct virtual_machine* vm)
     }
 }
 
-void print_code(struct virtual_machine* vm, struct prog_ptr* prog_ptr)
+void print_code(struct virtual_machine* vm, struct program* program)
 {
-    uint16_t addr = prog_ptr->entry_addr;
+    struct source_code* curr_line = program->source;
+    for(int i = 0; i < display.code_scroll && curr_line != NULL; ++i)
+        curr_line = curr_line->next;
 
-    char* string = malloc(CODE_BLOCK_WIDTH - 18);
-    for(int line = 1; line < DISPLAY_HEIGHT; ++line)
+    for(int line = display.code_scroll; line < DISPLAY_HEIGHT + display.code_scroll - 1; ++line)
     {
-        disp_cursor(0, line - 1);
-        printf("%3d", line);
+        disp_cursor(0, line - display.code_scroll);
+        printf("%4d", line + 1);
         putchar(179);
 
-        uint32_t bytecode = *(uint32_t*) (vm->memory + addr);
-        const struct instruction* inst = get_inst_opcode(bytecode & 0xff);
-        disassemble(inst, bytecode, string);
+        if(curr_line == NULL)
+        {
+            printf("%-70s", "");
+            continue;
+        }
 
-        if(addr == vm->pc)
+        if(curr_line->addr == vm->pc)
             disp_color(HIGHLIGHT_COLOR);
 
-        printf(" 0x%04x   ", addr);
-        printf("%s", string);
+        printf(" 0x%04x ", curr_line->addr);
+        printf("%-70s", curr_line->text);
 
         disp_color(DEFAULT_COLOR);
-        addr += inst->width;
-    }
 
-    free(string);
+        curr_line = curr_line->next;
+    }
 }
 
 void disp_clear()
