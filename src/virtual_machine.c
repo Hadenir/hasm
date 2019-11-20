@@ -130,14 +130,10 @@ bool handle_A(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    // printf("-> (%d) r%u += [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
-
     if(addr >= vm->mem_sz)
         return false;
 
     int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
-
-    // printf("(%d)\n", value);
 
     vm->regs[reg] += value;
     vm_update_flags(vm, vm->regs[reg]);
@@ -149,8 +145,6 @@ bool handle_AR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
-
-    // printf("-> (%d) r%u += r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
     vm->regs[regA] += vm->regs[regB];
     vm_update_flags(vm, vm->regs[regA]);
@@ -164,14 +158,10 @@ bool handle_S(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    // printf("-> (%d) r%u -= [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
-
     if(addr >= vm->mem_sz)
         return false;
 
     int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
-
-    // printf("(%d)\n", value);
 
     vm->regs[reg] -= value;
     vm_update_flags(vm, vm->regs[reg]);
@@ -183,8 +173,6 @@ bool handle_SR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
-
-    // printf("-> (%d) r%u -= r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
     vm->regs[regA] -= vm->regs[regB];
     vm_update_flags(vm, vm->regs[regA]);
@@ -198,14 +186,10 @@ bool handle_M(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    // printf("-> (%d) r%u *= [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
-
     if(addr >= vm->mem_sz)
         return false;
 
     int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
-
-    // printf("(%d)\n", value);
 
     vm->regs[reg] *= value;
     vm_update_flags(vm, vm->regs[reg]);
@@ -217,8 +201,6 @@ bool handle_MR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
-
-    // printf("-> (%d) r%u *= r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
     vm->regs[regA] *= vm->regs[regB];
     vm_update_flags(vm, vm->regs[regA]);
@@ -232,8 +214,6 @@ bool handle_D(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    // printf("-> (%d) r%u /= [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
-
     if(addr >= vm->mem_sz)
         return false;
 
@@ -245,8 +225,6 @@ bool handle_D(struct virtual_machine* vm, uint32_t args)
         return true;
     }
 
-    // printf("(%d)\n", value);
-
     vm->regs[reg] /= value;
     vm_update_flags(vm, vm->regs[reg]);
 
@@ -257,8 +235,6 @@ bool handle_DR(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
-
-    // printf("-> (%d) r%u /= r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
 
     int32_t value = vm->regs[regB];
 
@@ -280,14 +256,10 @@ bool handle_C(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    // printf("-> (%d) r%u <=> [0x%08x] ", vm->regs[reg], reg, addr + vm->regs[addr_reg]);
-
     if(addr >= vm->mem_sz)
         return false;
 
     int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
-
-    // printf("(%d)\n", value);
 
     int32_t result = vm->regs[reg] - value;
     vm_update_flags(vm, result);
@@ -300,8 +272,6 @@ bool handle_CR(struct virtual_machine* vm, uint32_t args)
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    // printf("-> (%d) r%u <=> r%u (%d)\n", vm->regs[regA], regA, regB, vm->regs[regB]);
-
     int32_t result = vm->regs[regA] - vm->regs[regB];
     vm_update_flags(vm, result);
 
@@ -312,8 +282,6 @@ bool handle_J(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = (args >> 8) + vm->regs[addr_reg];
-
-    // printf("-> J(vm->pc = 0x%08x)\n", addr);
 
     if(addr >= vm->mem_sz)
         return false;
@@ -327,8 +295,6 @@ bool handle_JP(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = (args >> 8) + vm->regs[addr_reg];
-
-    // printf("-> JP(vm->pc = 0x%08x)\n", addr);
 
     if(addr >= vm->mem_sz)
         return false;
@@ -344,8 +310,6 @@ bool handle_JN(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = (args >> 8) + vm->regs[addr_reg];
 
-    // printf("-> JN(vm->pc = 0x%08x)\n", addr);
-
     if(addr >= vm->mem_sz)
         return false;
 
@@ -359,8 +323,6 @@ bool handle_JZ(struct virtual_machine* vm, uint32_t args)
 {
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = (args >> 8) + vm->regs[addr_reg];
-
-    // printf("-> JZ(vm->pc = 0x%08x)\n", addr);
 
     if(addr >= vm->mem_sz)
         return false;
@@ -377,14 +339,10 @@ bool handle_L(struct virtual_machine* vm, uint32_t args)
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
 
-    // printf("-> r%u := [0x%08x] ", reg, addr + vm->regs[addr_reg]);
-
     if(addr >= vm->mem_sz)
         return false;
 
     int32_t value = *(int32_t*) (vm->memory + addr + vm->regs[addr_reg]);
-
-    // printf("(%d)\n", value);
 
     vm->regs[reg] = value;
     return true;
@@ -395,8 +353,6 @@ bool handle_LR(struct virtual_machine* vm, uint32_t args)
     uint8_t regA = args & 0xf;
     uint8_t regB = args >> 4;
 
-    // printf("-> r%u := r%u (%d)\n", regA, regB, vm->regs[regB]);
-
     vm->regs[regA] = vm->regs[regB];
     return true;
 }
@@ -406,8 +362,6 @@ bool handle_ST(struct virtual_machine* vm, uint32_t args)
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
-
-    // printf("-> [0x%08x] := r%u (%d)\n", addr + vm->regs[addr_reg], reg, vm->regs[reg]);
 
     if(addr >= vm->mem_sz)
         return false;
@@ -421,8 +375,6 @@ bool handle_LA(struct virtual_machine* vm, uint32_t args)
     uint8_t reg = args & 0xf;
     uint8_t addr_reg = (args >> 4) & 0xf;
     uint16_t addr = args >> 8;
-
-    // printf("-> r%u := 0x%08x\n", reg, addr + vm->regs[addr_reg]);
 
     vm->regs[reg] = addr + vm->regs[addr_reg];
     return true;
