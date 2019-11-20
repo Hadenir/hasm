@@ -53,6 +53,7 @@ void disp_finilize()
 {
     free(display.vm_regs);
     free(display.vm_memory);
+    free(display.status);
 }
 
 void disp_status(const char* status)

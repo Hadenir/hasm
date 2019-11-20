@@ -43,8 +43,8 @@ int hasm_assemble(const char* filename, struct program* program)
     if(file == NULL)
         return 2;
 
-    char* line = malloc(MAX_LINE_LENGTH);
-    char* token = malloc(MAX_TOKEN_LENGTH);
+    char line[MAX_LINE_LENGTH];
+    char token[MAX_TOKEN_LENGTH];
     uint16_t curr_addr = 0;
     struct sym_table* sym_table = NULL;
     struct source_code* source_code = NULL;
@@ -64,8 +64,6 @@ int hasm_assemble(const char* filename, struct program* program)
         if(sscanf(line, "%63s %n", token, &chars_read) == 0)
         {
             sym_table_free(&sym_table);
-            free(token);
-            free(line);
             return 3;
         }
         offset += chars_read;
@@ -91,8 +89,6 @@ int hasm_assemble(const char* filename, struct program* program)
             if(sscanf(line + offset, "%63s %n", token, &chars_read) == 0)
             {
                 sym_table_free(&sym_table);
-                free(token);
-                free(line);
                 return 3;
             }
             offset += chars_read;
@@ -112,8 +108,6 @@ int hasm_assemble(const char* filename, struct program* program)
                 if(inst == NULL)    // Unrecognized instruction mnemonic.
                 {
                     sym_table_free(&sym_table);
-                    free(token);
-                    free(line);
                     return 4;
                 }
 
@@ -143,8 +137,6 @@ int hasm_assemble(const char* filename, struct program* program)
         if(sscanf(line, "%63s %n", token, &chars_read) == 0)
         {
             sym_table_free(&sym_table);
-            free(token);
-            free(line);
             return 3;
         }
         offset += chars_read;
@@ -157,8 +149,6 @@ int hasm_assemble(const char* filename, struct program* program)
             if(sscanf(line + offset, "%63s %n", token, &chars_read) == 0)
             {
                 sym_table_free(&sym_table);
-                free(token);
-                free(line);
                 return 3;
             }
             offset += chars_read;
@@ -171,8 +161,6 @@ int hasm_assemble(const char* filename, struct program* program)
             if(sscanf(line + offset, "%63[^\t\r\n]", token) == 0)
             {
                 sym_table_free(&sym_table);
-                free(token);
-                free(line);
                 return 3;
             }
 
@@ -180,8 +168,6 @@ int hasm_assemble(const char* filename, struct program* program)
             if(bytecode == UINT32_MAX)
             {
                 sym_table_free(&sym_table);
-                free(token);
-                free(line);
                 return 4;
             }
 
@@ -232,8 +218,6 @@ int hasm_assemble(const char* filename, struct program* program)
     program->source = source_code;
 
     sym_table_free(&sym_table);
-    free(line);
-    free(token);
     return 0;
 }
 
@@ -302,7 +286,7 @@ uint32_t assemble_mem_and_reg(const struct instruction* self, const char* args, 
     uint32_t bytecode = 0;
 
     uint16_t dest_reg, addr_reg, addr;
-    char* label = calloc(MAX_TOKEN_LENGTH, 1);
+    char label[MAX_TOKEN_LENGTH] = {0};
     if(sscanf(args, "%hu , %hu ( %hu )", &dest_reg, &addr, &addr_reg) != 3)
     {
         if(sscanf(args, "%hu , %s", &dest_reg, label) == 2)
@@ -323,7 +307,6 @@ uint32_t assemble_mem_and_reg(const struct instruction* self, const char* args, 
     bytecode |= addr_reg << 12;
     bytecode |= addr << 16;
 
-    free(label);
     return bytecode;
 }
 
@@ -332,7 +315,7 @@ uint32_t assemble_jump(const struct instruction* self, const char* args, const s
     uint32_t bytecode = 0;
 
     uint16_t addr_reg, addr;
-    char* label = malloc(MAX_TOKEN_LENGTH);
+    char label[MAX_TOKEN_LENGTH] = {0};
     if(sscanf(args, "%hu ( %hu )", &addr, &addr_reg) != 2)
     {
         if(sscanf(args, "%s" , label) == 1)
@@ -352,6 +335,5 @@ uint32_t assemble_jump(const struct instruction* self, const char* args, const s
     bytecode |= addr_reg << 12;
     bytecode |= addr << 16;
 
-    free(label);
     return bytecode;
 }

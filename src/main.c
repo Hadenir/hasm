@@ -6,9 +6,6 @@
 #include "display.h"
 #include "virtual_machine.h"
 
-// TODO: Get rid of some malloc()'s
-// TODO: Cleaning, as always
-
 int main(int argc, char* argv[])
 {
     if(argc != 2)
