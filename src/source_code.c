@@ -26,6 +26,7 @@ void source_code_push_back(struct source_code** source_code, uint16_t addr, cons
             new_text[text_sz - 3] = '\0';
         }
         (*source_code)->text = new_text;
+        (*source_code)->empty = strlen(new_text) == 0 || new_text[0] == '#';
 
         return;
     }
@@ -51,6 +52,7 @@ void source_code_push_back(struct source_code** source_code, uint16_t addr, cons
         new_text[text_sz - 3] = '\0';
     }
     new->text = new_text;
+    new->empty = strlen(new_text) == 0 || new_text[0] == '#';
     current->next = new;
 }
 

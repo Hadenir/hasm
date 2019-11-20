@@ -251,7 +251,7 @@ void print_code(struct virtual_machine* vm, struct program* program)
             continue;
         }
 
-        if(curr_line->addr == vm->pc)
+        if(curr_line->addr == vm->pc && !curr_line->empty)
             disp_color(HIGHLIGHT_COLOR);
 
         printf(" 0x%04x ", curr_line->addr);
