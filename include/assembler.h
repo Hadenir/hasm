@@ -20,9 +20,3 @@ uint32_t assemble_nop(const struct instruction* self, const char* args, const st
 uint32_t assemble_reg_and_reg(const struct instruction* self, const char* args, const struct sym_table* sym_table);
 uint32_t assemble_mem_and_reg(const struct instruction* self, const char* args, const struct sym_table* sym_table);
 uint32_t assemble_jump(const struct instruction* self, const char* args, const struct sym_table* sym_table);
-
-// Following functions handle turning bytecode into readable instruction strings.
-void disassemble_nop(const struct instruction* self, uint32_t bytecode, char* str);
-void disassemble_reg_and_reg(const struct instruction* self, uint32_t bytecode, char* str);
-void disassemble_mem_and_reg(const struct instruction* self, uint32_t bytecode, char* str);
-void disassemble_jump(const struct instruction* self, uint32_t bytecode, char* str);

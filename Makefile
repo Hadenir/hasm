@@ -3,7 +3,7 @@ BUILD_DIR = build
 SRC_DIR = src
 INCLUDE_DIR = include
 
-COMPILER_FLAGS = -O0 -ggdb -Wall -pedantic
+COMPILER_FLAGS = -O3 -ggdb -Wall -Wextra -pedantic
 LINKER_FLAGS =
 
 SOURCE_FILES = $(wildcard ${SRC_DIR}/*.c)

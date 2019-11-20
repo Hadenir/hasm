@@ -118,7 +118,8 @@ void vm_update_flags(struct virtual_machine* vm, int32_t value)
 
 bool handle_NOP(struct virtual_machine* vm, uint32_t args)
 {
-    // printf("-> ___\n");
+    UNUSED(vm);
+    UNUSED(args);
 
     return true;
 }

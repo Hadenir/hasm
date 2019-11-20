@@ -11,15 +11,17 @@
 
 int disp_init(struct virtual_machine* vm, struct program* program)
 {
+    UNUSED(program);
+
     display.vm_regs = malloc(16 * 4);
     display.vm_memory = malloc(vm->mem_sz);
     display.status = malloc(DISPLAY_WIDTH - 40);
     display.mem_scroll = 0;
-    display.mem_max_scroll = vm->mem_sz / 16 - 10;
+    display.mem_max_scroll = vm->mem_sz > 27 * 16 ? vm->mem_sz / 16 - 25 : 1;
     display.code_scroll = 0;
-    update_internal_vm(vm);
-
     display.console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    update_internal_vm(vm);
 
     COORD size;
     size.X = DISPLAY_WIDTH;
@@ -39,6 +41,9 @@ int disp_init(struct virtual_machine* vm, struct program* program)
     cursor_info.bVisible = FALSE;
     SetConsoleCursorInfo(display.console_handle, &cursor_info);
 
+    HWND consoleWindow = GetConsoleWindow();
+    SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) & ~WS_THICKFRAME);
+
     disp_clear();
 
     return 0;
@@ -53,6 +58,7 @@ void disp_finilize()
 void disp_status(const char* status)
 {
     strcpy_s(display.status, DISPLAY_WIDTH - 40, status);
+    print_grid();
 }
 
 int disp_update(struct virtual_machine* vm, struct program* program)
@@ -149,7 +155,7 @@ void print_grid()
 
     disp_color(HIGHLIGHT_COLOR);
     disp_cursor(0, DISPLAY_HEIGHT - 1);
-    printf(display.status);
+    printf("%-*s", DISPLAY_WIDTH - 40, display.status);
     disp_cursor(DISPLAY_WIDTH - 40, DISPLAY_HEIGHT - 1);
     printf("SPACE=step  ENTER=continue  ESCAPE=exit");
     disp_color(DEFAULT_COLOR);
@@ -211,7 +217,7 @@ void print_mem(struct virtual_machine* vm)
         int x = i % 16;
         int y = i / 16;
 
-        int idx = i + display.mem_scroll * 16;
+        unsigned int idx = i + display.mem_scroll * 16;
         disp_cursor(CODE_BLOCK_WIDTH + 3 * x + 11, y + 3);
         if(idx < vm->mem_sz)
         {
@@ -230,13 +236,13 @@ void print_mem(struct virtual_machine* vm)
 void print_code(struct virtual_machine* vm, struct program* program)
 {
     struct source_code* curr_line = program->source;
-    for(int i = 0; i < display.code_scroll && curr_line != NULL; ++i)
+    for(unsigned int i = 0; i < display.code_scroll && curr_line != NULL; ++i)
         curr_line = curr_line->next;
 
-    for(int line = display.code_scroll; line < DISPLAY_HEIGHT + display.code_scroll - 1; ++line)
+    for(unsigned int line = display.code_scroll; line < DISPLAY_HEIGHT + display.code_scroll - 1; ++line)
     {
         disp_cursor(0, line - display.code_scroll);
-        printf("%4d", line + 1);
+        printf("%4u", line + 1);
         putchar(179);
 
         if(curr_line == NULL)

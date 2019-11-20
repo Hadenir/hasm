@@ -15,7 +15,7 @@ void source_code_push_back(struct source_code** source_code, uint16_t addr, cons
         (*source_code)->next = NULL;
         size_t text_sz = strlen(text) + 1;
         char* new_text = malloc(text_sz);
-        strncpy(new_text, text, text_sz);
+        memcpy(new_text, text, text_sz);
         if(new_text[text_sz - 2] == '\n')
         {
             new_text[text_sz - 2] = '\0';
@@ -40,7 +40,7 @@ void source_code_push_back(struct source_code** source_code, uint16_t addr, cons
     new->next = NULL;
     size_t text_sz = strlen(text) + 1;
     char* new_text = malloc(text_sz);
-    strncpy(new_text, text, text_sz);
+    memcpy(new_text, text, text_sz);
     if(new_text[text_sz - 2] == '\n')
     {
         new_text[text_sz - 2] = '\0';

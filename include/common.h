@@ -5,6 +5,8 @@
 
 #include "source_code.h"
 
+#define UNUSED(x) (void)(x)
+
 #define NUM_HANDLERS 32
 
 // Stores information about program to be executed by virtual machine.

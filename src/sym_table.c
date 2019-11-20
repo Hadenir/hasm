@@ -33,7 +33,7 @@ void sym_table_push_back(struct sym_table** sym_table, const char* name, uint16_
         (*sym_table)->next = NULL;
         size_t name_sz = strlen(name) + 1;
         char* new_name = malloc(name_sz);
-        strncpy(new_name, name, name_sz);
+        memcpy(new_name, name, name_sz);
         (*sym_table)->name = new_name;
 
         return;
@@ -49,7 +49,7 @@ void sym_table_push_back(struct sym_table** sym_table, const char* name, uint16_
     new->next = NULL;
     size_t name_sz = strlen(name) + 1;
     char* new_name = malloc(name_sz);
-    strncpy(new_name, name, name_sz);
+    memcpy(new_name, name, name_sz);
     new->name = new_name;
     current->next = new;
 }

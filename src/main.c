@@ -49,13 +49,16 @@ int main(int argc, char* argv[])
     }
 
     char status[100];
-    sprintf(status, "Executing %s...", filename);
-    disp_status(status);
-
     int action;
     while(result == 0)
     {
+        sprintf(status, "File: %s", filename);
+        disp_status(status);
+
         action = disp_update(&vm, &program);
+
+        sprintf(status, "Executing...");
+        disp_status(status);
         switch(action)
         {
             case 0:
