@@ -42,7 +42,7 @@ int disp_init(struct virtual_machine* vm, struct program* program)
     SetConsoleCursorInfo(display.console_handle, &cursor_info);
 
     HWND consoleWindow = GetConsoleWindow();
-    SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) & ~WS_THICKFRAME);
+    SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX);
 
     disp_clear();
 
@@ -61,7 +61,7 @@ void disp_finilize()
     SetConsoleCursorInfo(display.console_handle, &cursor_info);
 
     HWND consoleWindow = GetConsoleWindow();
-    SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) | WS_THICKFRAME);
+    SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) | WS_THICKFRAME | WS_MAXIMIZEBOX);
 }
 
 void disp_status(const char* status)
