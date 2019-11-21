@@ -54,6 +54,14 @@ void disp_finilize()
     free(display.vm_regs);
     free(display.vm_memory);
     free(display.status);
+
+    CONSOLE_CURSOR_INFO cursor_info;
+    cursor_info.dwSize = 20;
+    cursor_info.bVisible = TRUE;
+    SetConsoleCursorInfo(display.console_handle, &cursor_info);
+
+    HWND consoleWindow = GetConsoleWindow();
+    SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) | WS_THICKFRAME);
 }
 
 void disp_status(const char* status)
