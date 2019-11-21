@@ -1,9 +1,0 @@
-JEDEN   DC INTEGER(1)
-STO     DC INTEGER(100)
-
-        L 1, JEDEN
-START   A 1, JEDEN
-        C 1, STO
-        JZ KONIEC
-        J START
-KONIEC  CR 1, 1
